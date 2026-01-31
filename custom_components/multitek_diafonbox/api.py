@@ -18,6 +18,7 @@ from .const import (
     ENDPOINT_GET_LOCATIONS,
     ENDPOINT_LOGIN,
     ENDPOINT_RESUME_APP,
+    ENDPOINT_SET_CALL_DURATION,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -199,17 +200,38 @@ class MultitekAPI:
             location_id,
         )
 
+        # Step 1: Create call
         result = await self._request(ENDPOINT_ADD_CALL, data)
         
-        _LOGGER.info("Open door API response: %s (type: %s)", result, type(result))
+        _LOGGER.info("addCall API response: %s (type: %s)", result, type(result))
         
         # Response is "1" for success
         success = result == "1" or result == 1
         
         if not success:
-            _LOGGER.warning("Door open failed - API returned: %s", result)
+            _LOGGER.warning("addCall failed - API returned: %s", result)
+            return False
         
-        return success
+        # Step 2: Set call duration (this actually opens the door!)
+        duration_data = {
+            "call_id": call_id,
+            "call_duration": "6",  # 6 seconds, same as app
+        }
+        
+        _LOGGER.info("Setting call duration for call_id: %s", call_id)
+        
+        duration_result = await self._request(ENDPOINT_SET_CALL_DURATION, duration_data)
+        
+        _LOGGER.info("setCallDuration API response: %s (type: %s)", duration_result, type(duration_result))
+        
+        duration_success = duration_result == "1" or duration_result == 1
+        
+        if not duration_success:
+            _LOGGER.warning("setCallDuration failed - API returned: %s", duration_result)
+            return False
+        
+        _LOGGER.info("Door opened successfully!")
+        return True
 
     async def open_door_with_call(self, call_id: str) -> bool:
         """Open door using active call ID.
