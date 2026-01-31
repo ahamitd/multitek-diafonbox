@@ -17,6 +17,7 @@ ENDPOINT_GET_ACCOUNT: Final = "getAccount"
 ENDPOINT_RESUME_APP: Final = "resumeApp"
 ENDPOINT_ASK_CURRENT_CALL: Final = "askCurrentCall"
 ENDPOINT_SET_CALL_DURATION: Final = "setCallDuration"
+ENDPOINT_CONTROL_CURRENT_CALL: Final = "controlCurrentCall"
 
 # Configuration
 CONF_EMAIL: Final = "email"

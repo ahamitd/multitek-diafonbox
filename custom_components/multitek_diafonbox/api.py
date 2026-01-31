@@ -12,6 +12,7 @@ from .const import (
     API_PASSWORD,
     API_USERNAME,
     ENDPOINT_ADD_CALL,
+    ENDPOINT_CONTROL_CURRENT_CALL,
     ENDPOINT_GET_ACCOUNT,
     ENDPOINT_GET_CALLS,
     ENDPOINT_GET_LOCATIONS,
@@ -207,6 +208,36 @@ class MultitekAPI:
         
         if not success:
             _LOGGER.warning("Door open failed - API returned: %s", result)
+        
+        return success
+
+    async def open_door_with_call(self, call_id: str) -> bool:
+        """Open door using active call ID.
+        
+        This is the preferred method as it uses the controlCurrentCall endpoint
+        which directly opens the door for an active call.
+        
+        Args:
+            call_id: Active call ID from push notification or recent call records
+        """
+        data = {
+            "call_id": call_id,
+            "phone_id": self.phone_id,
+            "language": "tr-TR",
+            "email": self.email,
+        }
+        
+        _LOGGER.info("Opening door with call_id: %s", call_id)
+        
+        result = await self._request(ENDPOINT_CONTROL_CURRENT_CALL, data)
+        
+        _LOGGER.info("Control current call response: %s (type: %s)", result, type(result))
+        
+        # Response is "1" for success
+        success = result == "1" or result == 1
+        
+        if not success:
+            _LOGGER.warning("Door open with call failed - API returned: %s", result)
         
         return success
 

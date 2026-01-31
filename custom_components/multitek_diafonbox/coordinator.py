@@ -73,26 +73,37 @@ class MultitekDataUpdateCoordinator(DataUpdateCoordinator):
                 _LOGGER.warning("No locations found, cannot subscribe to topics")
                 return False
             
-            # Build topic list
+            # Build topic list matching Proxyman format
             topics = []
             for location in locations:
                 location_id = location.get("location_id")
                 rooms = location.get("location_rooms", [])
                 
-                # Location topic
+                # Location topic (apartman zili)
                 topics.append(f"{location_id}_LOCATION_TOPIC")
                 
-                # Room topics
+                # Room topics (daire zilleri)
                 for room in rooms:
-                    block = room.get("block_num")
-                    room_num = room.get("room_num")
-                    if block and room_num:
-                        topics.append(f"{location_id}{block}{room_num}_ROOM_TOPIC")
-                        topics.append(f"{location_id}{block}{room_num}_CALL_UPDATE")
-                        topics.append(f"{location_id}{block}_BLOCK_TOPIC")
+                    block_num = room.get("block_num", "")
+                    room_num = room.get("room_num", "")
+                    
+                    if block_num and room_num:
+                        # Room topic: {location_id}{block}{room}_ROOM_TOPIC
+                        topics.append(f"{location_id}{block_num}{room_num}_ROOM_TOPIC")
+                        
+                        # Call update topic: {location_id}{block}{room}_CALL_UPDATE
+                        topics.append(f"{location_id}{block_num}{room_num}_CALL_UPDATE")
+                        
+                        # Block topic: {location_id}{block}_BLOCK_TOPIC
+                        topics.append(f"{location_id}{block_num}_BLOCK_TOPIC")
             
             # Add general topic
             topics.append("MULTITEK")
+            
+            # Remove duplicates
+            topics = list(set(topics))
+            
+            _LOGGER.info("Subscribing to Pushy topics: %s", topics)
             
             # Connect and subscribe
             if await self.pushy_client.connect(topics):
