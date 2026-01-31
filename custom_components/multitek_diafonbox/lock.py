@@ -33,14 +33,29 @@ async def async_setup_entry(
 
     entities = []
     
+    locations = coordinator.data.get("locations", [])
+    _LOGGER.info("Setting up lock entities for %d locations", len(locations))
+    
     # Create a lock entity for each location
-    for location in coordinator.data.get("locations", []):
+    for location in locations:
         location_id = location.get("location_id")
         location_name = location.get("location_name")
         devices = location.get("location_devices", [])
         
+        _LOGGER.debug(
+            "Location: %s (%s) - Devices: %d",
+            location_name,
+            location_id,
+            len(devices),
+        )
+        
         if devices:
             device = devices[0]  # Use first device
+            _LOGGER.info(
+                "Creating lock entity: %s (SIP: %s)",
+                location_name,
+                device.get("sip"),
+            )
             entities.append(
                 MultitekLock(
                     coordinator,
@@ -50,6 +65,7 @@ async def async_setup_entry(
                 )
             )
 
+    _LOGGER.info("Adding %d lock entities", len(entities))
     async_add_entities(entities)
 
 

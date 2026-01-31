@@ -35,39 +35,56 @@ async def async_setup_entry(
 
     entities = []
     
+    locations = coordinator.data.get("locations", [])
+    _LOGGER.info("Setting up binary sensors for %d locations", len(locations))
+    
     # Create doorbell sensors for each location
-    for location in coordinator.data.get("locations", []):
+    for location in locations:
         location_id = location.get("location_id")
         location_name = location.get("location_name")
         
         # Get room info
         rooms = location.get("location_rooms", [])
-        if rooms:
-            room = rooms[0]
-            room_number = f"{room.get('block_num')}{room.get('room_num')}"
-            
-            # Apartment entrance doorbell
-            entities.append(
-                MultitekDoorbellSensor(
-                    coordinator,
-                    location_id,
-                    location_name,
-                    "apartman",
-                    None,  # Apartment entrance has no specific room
-                )
+        
+        _LOGGER.debug(
+            "Location: %s (%s) - Rooms: %d",
+            location_name,
+            location_id,
+            len(rooms),
+        )
+        
+        # Apartment entrance doorbell
+        _LOGGER.info("Creating apartment doorbell sensor: %s", location_name)
+        entities.append(
+            MultitekDoorbellSensor(
+                coordinator,
+                location_id,
+                location_name,
+                "apartman",
+                None,  # Apartment entrance has no specific room
             )
-            
-            # Apartment door doorbell
-            entities.append(
-                MultitekDoorbellSensor(
-                    coordinator,
-                    location_id,
+        )
+        
+        # Room doorbells
+        for room in rooms:
+            room_number = f"{room.get('block_num')}{room.get('room_num')}"
+            if room_number:
+                _LOGGER.info(
+                    "Creating room doorbell sensor: %s - Room %s",
                     location_name,
-                    "daire",
                     room_number,
                 )
-            )
+                entities.append(
+                    MultitekDoorbellSensor(
+                        coordinator,
+                        location_id,
+                        location_name,
+                        "daire",
+                        room_number,
+                    )
+                )
 
+    _LOGGER.info("Adding %d binary sensor entities", len(entities))
     async_add_entities(entities)
 
 

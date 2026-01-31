@@ -128,21 +128,33 @@ class MultitekDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             # Get locations and devices
             locations = await self.api.get_locations()
+            _LOGGER.debug("Fetched %d locations", len(locations))
             
             # Get call records
             call_records = await self.api.get_call_records()
+            _LOGGER.debug("Fetched %d call records", len(call_records))
             
             # Detect new doorbell rings
             self._detect_doorbell_events(call_records)
             
             # Get account info
             account = await self.api.get_account()
+            _LOGGER.debug("Account SIP: %s", account.get("sip"))
 
-            return {
+            data = {
                 "locations": locations,
                 "call_records": call_records,
                 "account": account,
             }
+            
+            # Log data structure for debugging
+            _LOGGER.info(
+                "Data update complete - Locations: %d, Calls: %d",
+                len(locations),
+                len(call_records),
+            )
+            
+            return data
 
         except MultitekAPIError as err:
             raise UpdateFailed(f"Error communicating with API: {err}") from err

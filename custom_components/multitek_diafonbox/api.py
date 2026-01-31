@@ -164,6 +164,7 @@ class MultitekAPI:
             self._user_sip = account.get("sip")
 
         if not self._user_sip:
+            _LOGGER.error("User SIP number not available")
             raise MultitekAPIError("User SIP number not available")
 
         import time
@@ -190,10 +191,24 @@ class MultitekAPI:
             }
         }
 
+        _LOGGER.info(
+            "Opening door - From: %s, To: %s, Location: %s",
+            self._user_sip,
+            device_sip,
+            location_id,
+        )
+
         result = await self._request(ENDPOINT_ADD_CALL, data)
         
+        _LOGGER.info("Open door API response: %s (type: %s)", result, type(result))
+        
         # Response is "1" for success
-        return result == "1" or result == 1
+        success = result == "1" or result == 1
+        
+        if not success:
+            _LOGGER.warning("Door open failed - API returned: %s", result)
+        
+        return success
 
     async def resume_app(self) -> dict[str, Any]:
         """Resume app session."""
