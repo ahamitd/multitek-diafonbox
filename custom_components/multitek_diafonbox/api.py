@@ -94,28 +94,29 @@ class MultitekAPI:
     async def login(self) -> bool:
         """Test login credentials."""
         try:
-            data = {
-                "email": self.email,
-                "password": self.password_hash,
-                "phone_id": self.phone_id,
-                "phone_info": "Home Assistant",
-                "pushy_token": "",
-                "push_kit_token": "",
-                "language": "tr-TR",
-            }
+            # For invited users, userAccountControl returns "0"
+            # Instead, we validate by trying to get account info
+            # If it succeeds, the credentials are valid
             
-            result = await self._request(ENDPOINT_LOGIN, data)
+            _LOGGER.debug("Attempting login for email: %s", self.email)
             
-            # Response is "1" for success
-            if result == "1" or result == 1:
-                # Get user account info to retrieve SIP number
+            try:
                 account = await self.get_account()
-                self._user_sip = account.get("sip")
-                return True
-            
-            return False
+                
+                if account and "email" in account:
+                    _LOGGER.info("Login successful for %s (invited user)", self.email)
+                    self._user_sip = account.get("sip")
+                    return True
+                else:
+                    _LOGGER.warning("Login failed for %s - Invalid response", self.email)
+                    return False
+                    
+            except MultitekAPIError as err:
+                _LOGGER.error("Login failed for %s: %s", self.email, err)
+                return False
 
-        except MultitekAuthError:
+        except Exception as err:
+            _LOGGER.error("Unexpected error during login: %s", err)
             return False
 
     async def get_account(self) -> dict[str, Any]:
