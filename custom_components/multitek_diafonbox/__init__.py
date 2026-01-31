@@ -35,6 +35,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         session=session,
     )
 
+
     # Test login
     if not await api.login():
         _LOGGER.error("Failed to authenticate with Multitek API")
@@ -45,6 +46,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Fetch initial data
     await coordinator.async_config_entry_first_refresh()
+    
+    # Setup Pushy push notifications (optional, falls back to polling)
+    await coordinator.async_setup_pushy()
 
     # Store coordinator
     hass.data.setdefault(DOMAIN, {})
@@ -52,13 +56,28 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Forward entry setup to platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    
+    # Register shutdown handler
+    async def async_shutdown(event):
+        """Handle shutdown."""
+        await coordinator.async_shutdown()
+    
+    entry.async_on_unload(
+        hass.bus.async_listen_once("homeassistant_stop", async_shutdown)
+    )
 
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
+    # Shutdown coordinator
+    coordinator = hass.data[DOMAIN].get(entry.entry_id)
+    if coordinator:
+        await coordinator.async_shutdown()
+    
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok
+

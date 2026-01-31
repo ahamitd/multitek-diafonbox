@@ -123,6 +123,30 @@ class MultitekAPI:
         """Get user account information."""
         return await self._request(ENDPOINT_GET_ACCOUNT)
 
+    async def get_pushy_credentials(self) -> tuple[str, str] | None:
+        """Get Pushy token and auth from account info.
+        
+        Returns:
+            Tuple of (token, auth) or None if not found
+        """
+        account = await self.get_account()
+        phone_list = account.get("phone_list", [])
+        
+        if not phone_list:
+            return None
+        
+        # Get token from first phone
+        token = phone_list[0].get("token")
+        
+        if not token:
+            return None
+        
+        # Auth key is hardcoded for now
+        # TODO: Find where this comes from in the API
+        auth = "401c2fe6e2730dd87b2c12c8afe36c11499f7141e9296f3c2cd03bb33a1b3992"
+        
+        return (token, auth)
+
     async def get_locations(self) -> list[dict[str, Any]]:
         """Get user locations and devices."""
         result = await self._request(ENDPOINT_GET_LOCATIONS)

@@ -13,6 +13,7 @@ from .const import (
     DOMAIN,
     EVENT_DOORBELL_PRESSED,
 )
+from .pushy_client import PushyClient
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ class MultitekDataUpdateCoordinator(DataUpdateCoordinator):
         self,
         hass: HomeAssistant,
         api: MultitekAPI,
+        enable_push: bool = True,
     ) -> None:
         """Initialize coordinator."""
         super().__init__(
@@ -34,6 +36,92 @@ class MultitekDataUpdateCoordinator(DataUpdateCoordinator):
         )
         self.api = api
         self._last_call_ids: set[str] = set()
+        self.pushy_client: PushyClient | None = None
+        self._enable_push = enable_push
+        self._push_connected = False
+
+    async def async_setup_pushy(self) -> bool:
+        """Setup Pushy push notifications.
+        
+        Returns:
+            True if Pushy was setup successfully, False otherwise
+        """
+        if not self._enable_push:
+            _LOGGER.info("Push notifications disabled, using polling only")
+            return False
+        
+        try:
+            # Get Pushy credentials
+            credentials = await self.api.get_pushy_credentials()
+            if not credentials:
+                _LOGGER.warning("Could not get Pushy credentials, using polling only")
+                return False
+            
+            token, auth = credentials
+            
+            # Create Pushy client
+            self.pushy_client = PushyClient(
+                token=token,
+                auth=auth,
+                session=self.api.session,
+                callback=self._handle_push_notification,
+            )
+            
+            # Get location info for topics
+            locations = await self.api.get_locations()
+            if not locations:
+                _LOGGER.warning("No locations found, cannot subscribe to topics")
+                return False
+            
+            # Build topic list
+            topics = []
+            for location in locations:
+                location_id = location.get("location_id")
+                rooms = location.get("location_rooms", [])
+                
+                # Location topic
+                topics.append(f"{location_id}_LOCATION_TOPIC")
+                
+                # Room topics
+                for room in rooms:
+                    block = room.get("block_num")
+                    room_num = room.get("room_num")
+                    if block and room_num:
+                        topics.append(f"{location_id}{block}{room_num}_ROOM_TOPIC")
+                        topics.append(f"{location_id}{block}{room_num}_CALL_UPDATE")
+                        topics.append(f"{location_id}{block}_BLOCK_TOPIC")
+            
+            # Add general topic
+            topics.append("MULTITEK")
+            
+            # Connect and subscribe
+            if await self.pushy_client.connect(topics):
+                self._push_connected = True
+                _LOGGER.info("Pushy push notifications enabled")
+                return True
+            else:
+                _LOGGER.warning("Failed to connect to Pushy, using polling only")
+                return False
+                
+        except Exception as err:
+            _LOGGER.error("Error setting up Pushy: %s", err)
+            return False
+
+    def _handle_push_notification(self, data: dict[str, Any]) -> None:
+        """Handle incoming push notification.
+        
+        Args:
+            data: Push notification data
+        """
+        _LOGGER.debug("Received push notification: %s", data)
+        
+        # Trigger immediate data refresh
+        self.hass.async_create_task(self.async_request_refresh())
+
+    async def async_shutdown(self) -> None:
+        """Shutdown coordinator and cleanup."""
+        if self.pushy_client:
+            await self.pushy_client.disconnect()
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from API."""
