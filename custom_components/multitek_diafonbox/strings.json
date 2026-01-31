@@ -3,16 +3,19 @@
         "step": {
             "user": {
                 "title": "Multitek DiafonBox Kurulumu",
-                "description": "Multitek DiafonBox hesap bilgilerinizi girin",
+                "description": "Phone ID'nizi bulmak için: Multitek Cloud uygulamasını telefonunuzda açın, ardından bu entegrasyonu kurarken Home Assistant loglarına bakın. İlk kurulum denemesinde logda phone_id gösterilecektir.",
                 "data": {
                     "email": "E-posta",
-                    "password": "Şifre"
+                    "phone_id": "Phone ID (UUID formatında, örn: 32A8C6BB-F20D-4658-8595-8144098A922C)"
+                },
+                "data_description": {
+                    "phone_id": "Telefonunuzun benzersiz kimliği. Multitek Cloud uygulamasının kaydettiği cihaz ID'si."
                 }
             }
         },
         "error": {
             "cannot_connect": "Bağlantı hatası",
-            "invalid_auth": "Geçersiz e-posta veya şifre",
+            "invalid_auth": "Geçersiz e-posta veya phone_id. Phone ID'nizin doğru olduğundan emin olun.",
             "unknown": "Beklenmeyen hata oluştu"
         },
         "abort": {

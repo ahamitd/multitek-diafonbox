@@ -22,7 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_EMAIL): str,
-        vol.Required(CONF_PASSWORD): str,
+        vol.Required(CONF_PHONE_ID): str,
     }
 )
 
@@ -31,19 +31,18 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     """Validate the user input allows us to connect."""
     session = async_get_clientsession(hass)
     
-    # Generate a unique phone_id for this installation
-    phone_id = str(uuid.uuid4()).upper()
+    phone_id = data[CONF_PHONE_ID].strip()
     
     api = MultitekAPI(
         email=data[CONF_EMAIL],
-        password=data[CONF_PASSWORD],
+        password="",  # Not needed for invited users
         phone_id=phone_id,
         session=session,
     )
 
     # Test login
     if not await api.login():
-        raise MultitekAuthError("Invalid email or password")
+        raise MultitekAuthError("Invalid email or phone_id")
 
     # Get account info for title
     account = await api.get_account()
