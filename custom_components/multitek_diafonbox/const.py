@@ -24,7 +24,7 @@ CONF_PASSWORD: Final = "password"
 CONF_PHONE_ID: Final = "phone_id"
 
 # Defaults
-DEFAULT_SCAN_INTERVAL: Final = 30  # seconds
+DEFAULT_SCAN_INTERVAL: Final = 5  # seconds (reduced for faster doorbell detection)
 DEFAULT_PHONE_ID: Final = "home-assistant-integration"
 
 # Device Types
