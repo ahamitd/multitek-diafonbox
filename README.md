@@ -23,7 +23,7 @@ Multitek DiafonBox akıllı kapı kontrol sistemi için Home Assistant custom co
 #### HACS ile (Önerilen)
 
 1. HACS > Integrations > ⋮ (sağ üst) > Custom repositories
-2. Repository URL'i ekleyin: `https://github.com/hamitdurmus/multitek-diafonbox`
+2. Repository URL'i ekleyin: `https://github.com/ahamitd/multitek-diafonbox`
 3. Category: Integration
 4. "Multitek DiafonBox" arayın ve yükleyin
 5. Home Assistant'ı yeniden başlatın
@@ -166,7 +166,7 @@ Kapı açıldığında tetiklenir.
 
 ### Destek
 
-Sorun bildirmek veya öneride bulunmak için [GitHub Issues](https://github.com/hamitdurmus/multitek-diafonbox/issues) kullanın.
+Sorun bildirmek veya öneride bulunmak için [GitHub Issues](https://github.com/ahamitd/multitek-diafonbox/issues) kullanın.
 
 ---
 
@@ -185,7 +185,7 @@ Sorun bildirmek veya öneride bulunmak için [GitHub Issues](https://github.com/
 #### HACS (Recommended)
 
 1. HACS > Integrations > ⋮ (top right) > Custom repositories
-2. Add repository URL: `https://github.com/hamitdurmus/multitek-diafonbox`
+2. Add repository URL: `https://github.com/ahamitd/multitek-diafonbox`
 3. Category: Integration
 4. Search for "Multitek DiafonBox" and install
 5. Restart Home Assistant
@@ -237,7 +237,7 @@ See Turkish section above for troubleshooting tips.
 
 ### Support
 
-Use [GitHub Issues](https://github.com/hamitdurmus/multitek-diafonbox/issues) to report problems or suggestions.
+Use [GitHub Issues](https://github.com/ahamitd/multitek-diafonbox/issues) to report problems or suggestions.
 
 ---
 
