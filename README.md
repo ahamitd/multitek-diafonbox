@@ -34,12 +34,45 @@ Multitek DiafonBox akıllı kapı kontrol sistemi için Home Assistant custom co
 2. `custom_components/multitek_diafonbox` klasörünü Home Assistant `config/custom_components/` dizinine kopyalayın
 3. Home Assistant'ı yeniden başlatın
 
+### 📱 Phone ID Nasıl Bulunur? (ÖNEMLİ!)
+
+**Davet edilmiş kullanıcılar için Phone ID gereklidir.**
+
+Phone ID, telefonunuzun Multitek Cloud uygulamasına kayıtlı benzersiz kimliğidir (UUID formatında).
+
+#### Yöntem 1: Proxyman ile Bulma (Önerilen - iOS)
+
+1. **Proxyman uygulamasını** iPhone'unuza indirin (App Store'dan ücretsiz)
+2. Proxyman'i açın ve **HTTPS yakalamayı** etkinleştirin
+3. **Multitek Cloud uygulamasını** tamamen kapatın
+4. Proxyman'de **Recording** başlatın
+5. **Multitek Cloud'u açın** (zaten giriş yapmış olmalısınız)
+6. Proxyman'de **"cloud.multitek.com.tr"** adresine yapılan istekleri arayın
+7. Herhangi bir isteğin **Request Body**'sine bakın
+8. `"phone_id"` alanını bulun - bu sizin Phone ID'niz!
+   - Örnek: `"phone_id": "32A8C6BB-F20D-4658-8595-8144098A922C"`
+
+#### Yöntem 2: Android için (ADB ile)
+
+```bash
+# Android cihazınızı bilgisayara bağlayın
+adb logcat | grep phone_id
+# Multitek Cloud uygulamasını açın
+# Logda phone_id değerini göreceksiniz
+```
+
+#### Yöntem 3: Home Assistant Loglarından
+
+1. Entegrasyonu kurmayı deneyin (başarısız olacak)
+2. Home Assistant loglarına bakın
+3. Hata mesajında phone_id önerisi görebilirsiniz
+
 ### Yapılandırma
 
 1. Home Assistant > Ayarlar > Cihazlar ve Servisler
 2. "+ Entegrasyon Ekle" butonuna tıklayın
 3. "Multitek DiafonBox" arayın
-4. E-posta ve şifrenizi girin
+4. **E-posta** ve **Phone ID** girin
 5. Kurulum tamamlandı!
 
 ### Entity'ler
