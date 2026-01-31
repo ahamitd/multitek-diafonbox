@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import uuid
 from typing import Any
 
 import aiohttp
@@ -14,7 +15,7 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import MultitekAPI, MultitekAuthError, MultitekAPIError
-from .const import CONF_PHONE_ID, DEFAULT_PHONE_ID, DOMAIN
+from .const import CONF_PHONE_ID, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,10 +31,13 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     """Validate the user input allows us to connect."""
     session = async_get_clientsession(hass)
     
+    # Generate a unique phone_id for this installation
+    phone_id = str(uuid.uuid4()).upper()
+    
     api = MultitekAPI(
         email=data[CONF_EMAIL],
         password=data[CONF_PASSWORD],
-        phone_id=DEFAULT_PHONE_ID,
+        phone_id=phone_id,
         session=session,
     )
 
@@ -50,7 +54,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     if not title:
         title = data[CONF_EMAIL]
 
-    return {"title": title}
+    return {"title": title, "phone_id": phone_id}
 
 
 class MultitekConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -81,7 +85,7 @@ class MultitekConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     data={
                         CONF_EMAIL: user_input[CONF_EMAIL],
                         CONF_PASSWORD: user_input[CONF_PASSWORD],
-                        CONF_PHONE_ID: DEFAULT_PHONE_ID,
+                        CONF_PHONE_ID: info["phone_id"],
                     },
                 )
 
