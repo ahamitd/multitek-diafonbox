@@ -24,12 +24,14 @@ PLATFORMS: list[Platform] = [
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Multitek DiafonBox from a config entry."""
+    email = entry.data[CONF_EMAIL]
+    phone_id = entry.data[CONF_PHONE_ID]
+
     session = async_get_clientsession(hass)
-    
     api = MultitekAPI(
-        email=entry.data[CONF_EMAIL],
-        password=entry.data[CONF_PASSWORD],
-        phone_id=entry.data[CONF_PHONE_ID],
+        email=email,
+        password="",  # Not needed for invited users
+        phone_id=phone_id,
         session=session,
     )
 

@@ -83,7 +83,6 @@ class MultitekConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     title=info["title"],
                     data={
                         CONF_EMAIL: user_input[CONF_EMAIL],
-                        CONF_PASSWORD: user_input[CONF_PASSWORD],
                         CONF_PHONE_ID: info["phone_id"],
                     },
                 )
