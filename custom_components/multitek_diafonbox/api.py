@@ -172,7 +172,7 @@ class MultitekAPI:
         import time
         import uuid
 
-        call_id = uuid.uuid4().hex[:30]
+        call_id = uuid.uuid4().hex  # 32 characters, no limit!
         
         data = {
             "call_model": {
@@ -194,10 +194,11 @@ class MultitekAPI:
         }
 
         _LOGGER.info(
-            "Opening door - From: %s, To: %s, Location: %s",
+            "Opening door - From: %s, To: %s, Location: %s, call_id: %s",
             self._user_sip,
             device_sip,
             location_id,
+            call_id,
         )
 
         # Step 1: Create call
@@ -209,7 +210,7 @@ class MultitekAPI:
         success = result == "1" or result == 1
         
         if not success:
-            _LOGGER.warning("addCall failed - API returned: %s", result)
+            _LOGGER.error("addCall failed - API returned: %s", result)
             return False
         
         # Step 2: Set call duration (this actually opens the door!)
@@ -227,10 +228,14 @@ class MultitekAPI:
         duration_success = duration_result == "1" or duration_result == 1
         
         if not duration_success:
-            _LOGGER.warning("setCallDuration failed - API returned: %s", duration_result)
+            _LOGGER.error(
+                "setCallDuration failed - call_id: %s, response: %s",
+                call_id,
+                duration_result,
+            )
             return False
         
-        _LOGGER.info("Door opened successfully!")
+        _LOGGER.info("Door opened successfully with call_id: %s!", call_id)
         return True
 
     async def open_door_with_call(self, call_id: str) -> bool:
