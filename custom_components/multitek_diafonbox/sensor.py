@@ -79,6 +79,14 @@ class MultitekLastRingSensor(CoordinatorEntity, SensorEntity):
         self._location_id = location_id
         self._attr_name = f"{location_name} Son Zil Zamanı"
         self._attr_unique_id = f"{DOMAIN}_{location_id}_last_ring"
+        
+        # Device info for grouping
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, location_id)},
+            "name": location_name,
+            "manufacturer": "Multitek",
+            "model": "DiafonBox",
+        }
 
     @property
     def native_value(self) -> str | None:
@@ -133,6 +141,14 @@ class MultitekTodayCountSensor(CoordinatorEntity, SensorEntity):
         self._location_id = location_id
         self._attr_name = f"{location_name} Bugün Zil Sayısı"
         self._attr_unique_id = f"{DOMAIN}_{location_id}_today_count"
+        
+        # Device info for grouping
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, location_id)},
+            "name": location_name,
+            "manufacturer": "Multitek",
+            "model": "DiafonBox",
+        }
 
     @property
     def native_value(self) -> int:
@@ -182,6 +198,14 @@ class MultitekTotalCallsSensor(CoordinatorEntity, SensorEntity):
         self._location_id = location_id
         self._attr_name = f"{location_name} Toplam Arama"
         self._attr_unique_id = f"{DOMAIN}_{location_id}_total_calls"
+        
+        # Device info for grouping
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, location_id)},
+            "name": location_name,
+            "manufacturer": "Multitek",
+            "model": "DiafonBox",
+        }
 
     @property
     def native_value(self) -> int:

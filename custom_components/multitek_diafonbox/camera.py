@@ -60,6 +60,14 @@ class MultitekCamera(CoordinatorEntity, Camera):
         self._attr_name = f"{location_name} Son Zil Görüntüsü"
         self._attr_unique_id = f"{DOMAIN}_{location_id}_camera"
         self._last_image: bytes | None = None
+        
+        # Device info for grouping
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, location_id)},
+            "name": location_name,
+            "manufacturer": "Multitek",
+            "model": "DiafonBox",
+        }
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

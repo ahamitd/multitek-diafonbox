@@ -87,6 +87,15 @@ class MultitekLock(CoordinatorEntity, LockEntity):
         self._device = device
         self._attr_name = f"{location_name} Kapı"
         self._attr_unique_id = f"{DOMAIN}_{location_id}_lock"
+        
+        # Device info for grouping
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, location_id)},
+            "name": location_name,
+            "manufacturer": "Multitek",
+            "model": "DiafonBox",
+            "sw_version": device.get("version", "1.0"),
+        }
 
     @property
     def is_locked(self) -> bool:

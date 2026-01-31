@@ -115,6 +115,14 @@ class MultitekDoorbellSensor(CoordinatorEntity, BinarySensorEntity):
         else:
             self._attr_name = f"{location_name} Daire Zili"
             self._attr_unique_id = f"{DOMAIN}_{location_id}_doorbell_apartment"
+        
+        # Device info for grouping
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, location_id)},
+            "name": location_name,
+            "manufacturer": "Multitek",
+            "model": "DiafonBox",
+        }
 
     @property
     def is_on(self) -> bool:
