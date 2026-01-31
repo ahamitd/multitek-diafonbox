@@ -1,0 +1,12 @@
+{
+  "domain": "multitek_diafonbox",
+  "name": "Multitek DiafonBox",
+  "codeowners": ["@hamitdurmus"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/hamitdurmus/multitek-diafonbox",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/hamitdurmus/multitek-diafonbox/issues",
+  "requirements": ["aiohttp>=3.8.0"],
+  "version": "1.0.0"
+}

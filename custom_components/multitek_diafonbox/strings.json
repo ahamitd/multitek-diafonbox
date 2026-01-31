@@ -1,0 +1,22 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "Multitek DiafonBox Kurulumu",
+                "description": "Multitek DiafonBox hesap bilgilerinizi girin",
+                "data": {
+                    "email": "E-posta",
+                    "password": "Şifre"
+                }
+            }
+        },
+        "error": {
+            "cannot_connect": "Bağlantı hatası",
+            "invalid_auth": "Geçersiz e-posta veya şifre",
+            "unknown": "Beklenmeyen hata oluştu"
+        },
+        "abort": {
+            "already_configured": "Bu hesap zaten yapılandırılmış"
+        }
+    }
+}
