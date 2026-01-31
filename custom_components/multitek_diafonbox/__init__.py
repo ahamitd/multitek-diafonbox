@@ -27,6 +27,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     email = entry.data[CONF_EMAIL]
     phone_id = entry.data[CONF_PHONE_ID]
 
+    _LOGGER.info("Setting up Multitek DiafonBox integration for %s", email)
+
     session = async_get_clientsession(hass)
     api = MultitekAPI(
         email=email,
@@ -41,11 +43,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.error("Failed to authenticate with Multitek API")
         return False
 
+    _LOGGER.info("Authentication successful")
+
     # Create coordinator
     coordinator = MultitekDataUpdateCoordinator(hass, api)
 
     # Fetch initial data
+    _LOGGER.info("Fetching initial data...")
     await coordinator.async_config_entry_first_refresh()
+    
+    # Log data availability
+    if coordinator.data:
+        locations = coordinator.data.get("locations", [])
+        _LOGGER.info(
+            "Initial data loaded - Locations: %d, Coordinator data keys: %s",
+            len(locations),
+            list(coordinator.data.keys()),
+        )
+    else:
+        _LOGGER.error("Coordinator data is empty!")
     
     # Setup Pushy push notifications (optional, falls back to polling)
     await coordinator.async_setup_pushy()
@@ -54,8 +70,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
+    _LOGGER.info("Forwarding setup to platforms...")
+    
     # Forward entry setup to platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    
+    _LOGGER.info("Platform setup complete")
     
     # Register shutdown handler
     async def async_shutdown(event):
