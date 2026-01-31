@@ -42,7 +42,7 @@ class MultitekAPI:
     ) -> None:
         """Initialize the API client."""
         self.email = email
-        self.password_hash = hashlib.md5(password.encode()).hexdigest().upper()
+        self.password_hash = hashlib.md5(password.encode()).hexdigest()
         self.phone_id = phone_id
         self.session = session
         self.auth = BasicAuth(API_USERNAME, API_PASSWORD)
