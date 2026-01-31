@@ -35,7 +35,7 @@ class PushyClient:
         self.session = session
         self.callback = callback
         self._connected = False
-        self._ws: aiohttp.ClientWebSocketResponse | None = None
+        self._topics: list[str] = []
         self._listen_task: asyncio.Task | None = None
 
     async def authenticate(self) -> bool:
@@ -132,16 +132,73 @@ class PushyClient:
             return False
         
         self._connected = True
+        self._topics = topics
         
-        # Start listening task
-        # Note: Pushy.me uses HTTP long-polling or WebSocket
-        # For now, we'll use polling as fallback
-        # TODO: Implement WebSocket or long-polling listener
+        # Start long-polling listener
+        await self._start_listener()
         
         return True
 
+    async def _start_listener(self):
+        """Start long-polling listener for push notifications."""
+        _LOGGER.info("Starting Pushy push notification listener...")
+        
+        async def listen_loop():
+            """Long-polling loop for push notifications."""
+            while self._connected:
+                try:
+                    # Pushy.me long-polling endpoint
+                    url = f"{PUSHY_API_BASE}/devices/listen"
+                    data = {
+                        "auth": self.auth,
+                        "token": self.token,
+                    }
+                    
+                    # Long-polling request (waits for notification or timeout)
+                    async with self.session.post(
+                        url,
+                        json=data,
+                        timeout=aiohttp.ClientTimeout(total=60),  # 60 second timeout
+                    ) as response:
+                        if response.status == 200:
+                            result = await response.json()
+                            
+                            # Check if we got a notification
+                            if result.get("notification"):
+                                notification = result["notification"]
+                                _LOGGER.info(
+                                    "Received push notification: %s",
+                                    notification.get("data", {}),
+                                )
+                                
+                                # Trigger callback
+                                if self.callback:
+                                    await self.callback(notification)
+                        else:
+                            _LOGGER.debug(
+                                "Pushy listen response: %s",
+                                await response.text(),
+                            )
+                            # Wait a bit before retrying
+                            await asyncio.sleep(5)
+                            
+                except asyncio.TimeoutError:
+                    # Timeout is normal for long-polling, just retry
+                    _LOGGER.debug("Pushy listen timeout, retrying...")
+                    continue
+                    
+                except Exception as err:
+                    _LOGGER.error("Pushy listen error: %s", err)
+                    await asyncio.sleep(10)  # Wait before retry
+        
+        # Start listener in background
+        self._listen_task = asyncio.create_task(listen_loop())
+
     async def disconnect(self) -> None:
         """Disconnect from Pushy."""
+        self._connected = False
+        
+        # Cancel listener task
         if self._listen_task:
             self._listen_task.cancel()
             try:
@@ -149,10 +206,10 @@ class PushyClient:
             except asyncio.CancelledError:
                 pass
         
-        if self._ws:
-            await self._ws.close()
+        # Unsubscribe from all topics
+        if self._topics:
+            await self.unsubscribe(self._topics)
         
-        self._connected = False
         _LOGGER.info("Pushy client disconnected")
 
     @property
