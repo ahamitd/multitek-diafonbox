@@ -118,16 +118,25 @@ class MultitekDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.error("Error setting up Pushy: %s", err)
             return False
 
-    def _handle_push_notification(self, data: dict[str, Any]) -> None:
+    async def _handle_push_notification(self, data: dict[str, Any]) -> None:
         """Handle incoming push notification.
         
         Args:
             data: Push notification data
         """
-        _LOGGER.debug("Received push notification: %s", data)
+        _LOGGER.info("Received push notification: %s", data)
+        
+        # Fire doorbell event immediately
+        self.hass.bus.fire(
+            EVENT_DOORBELL_PRESSED,
+            {
+                "notification": data,
+                "source": "pushy",
+            },
+        )
         
         # Trigger immediate data refresh
-        self.hass.async_create_task(self.async_request_refresh())
+        await self.async_request_refresh()
 
     async def async_shutdown(self) -> None:
         """Shutdown coordinator and cleanup."""

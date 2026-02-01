@@ -117,56 +117,23 @@ class MultitekLock(CoordinatorEntity, LockEntity):
         """Unlock the door."""
         device_sip = self._device.get("sip")
         
+        _LOGGER.info(
+            "Unlocking door: %s (SIP: %s, Location: %s)",
+            self._location_name,
+            device_sip,
+            self._location_id,
+        )
+        
         try:
-            # Try to find a recent call (last 5 minutes) for this location
-            call_records = self.coordinator.data.get("call_records", [])
-            recent_call_id = None
-            
-            import time
-            five_minutes_ago = int(time.time() * 1000) - (5 * 60 * 1000)
-            
-            for call in call_records:
-                # Check if call is for this location and recent
-                if (call.get("location_id") == self._location_id and
-                    int(call.get("date", 0)) > five_minutes_ago):
-                    recent_call_id = call.get("call_id")
-                    _LOGGER.info("Found recent call_id: %s", recent_call_id)
-                    break
-            
-            # Try controlCurrentCall first if we have a recent call
-            if recent_call_id:
-                _LOGGER.info("Attempting to open door with call_id: %s", recent_call_id)
-                success = await self.coordinator.api.open_door_with_call(recent_call_id)
-                
-                if success:
-                    _LOGGER.info("Door opened successfully with call_id: %s", recent_call_id)
-                    
-                    # Fire event
-                    self.hass.bus.fire(
-                        EVENT_DOOR_OPENED,
-                        {
-                            ATTR_LOCATION_ID: self._location_id,
-                            ATTR_LOCATION_NAME: self._location_name,
-                            "method": "controlCurrentCall",
-                            "call_id": recent_call_id,
-                        },
-                    )
-                    
-                    # Request data refresh
-                    await self.coordinator.async_request_refresh()
-                    return
-                else:
-                    _LOGGER.warning("Failed to open door with call_id, trying fallback method")
-            
-            # Fallback: Use addCall method (creates new call)
-            _LOGGER.info("Using fallback addCall method")
+            # Use addCall + setCallDuration method
+            # This works without requiring an active doorbell ring
             success = await self.coordinator.api.open_door(
                 device_sip=device_sip,
                 location_id=self._location_id,
             )
             
             if success:
-                _LOGGER.info("Door opened: %s", self._location_name)
+                _LOGGER.info("Door opened successfully: %s", self._location_name)
                 
                 # Fire event
                 self.hass.bus.fire(
@@ -175,7 +142,6 @@ class MultitekLock(CoordinatorEntity, LockEntity):
                         ATTR_LOCATION_ID: self._location_id,
                         ATTR_LOCATION_NAME: self._location_name,
                         ATTR_DEVICE_SIP: device_sip,
-                        "method": "addCall",
                     },
                 )
                 
@@ -185,7 +151,7 @@ class MultitekLock(CoordinatorEntity, LockEntity):
                 _LOGGER.error("Failed to open door: %s", self._location_name)
                 
         except Exception as err:
-            _LOGGER.error("Error opening door: %s", err)
+            _LOGGER.error("Error opening door %s: %s", self._location_name, err)
 
     async def async_lock(self, **kwargs: Any) -> None:
         """Lock the door (not supported)."""

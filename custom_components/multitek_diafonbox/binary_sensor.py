@@ -130,7 +130,7 @@ class MultitekDoorbellSensor(CoordinatorEntity, BinarySensorEntity):
         # Check for recent calls (within last 10 seconds)
         if self._sensor_type == "apartman":
             # Apartment entrance: calls from device to any room
-            recent_calls = self.coordinator.get_recent_calls(minutes=0.17)  # ~10 seconds
+            recent_calls = self.coordinator.get_recent_calls(minutes=0.5)  # 30 seconds
             for call in recent_calls:
                 if (
                     call.get("call_state") == CALL_STATE_MISSED
@@ -143,7 +143,7 @@ class MultitekDoorbellSensor(CoordinatorEntity, BinarySensorEntity):
             if self._room_number:
                 recent_calls = self.coordinator.get_recent_calls(
                     call_to=self._room_number,
-                    minutes=0.17,
+                    minutes=0.5,  # 30 seconds
                 )
                 for call in recent_calls:
                     if call.get("call_state") == CALL_STATE_MISSED:

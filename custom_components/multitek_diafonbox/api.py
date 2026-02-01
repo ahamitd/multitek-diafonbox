@@ -160,83 +160,98 @@ class MultitekAPI:
         return result if isinstance(result, list) else []
 
     async def open_door(self, device_sip: str, location_id: str) -> bool:
-        """Open door by initiating a call."""
-        if not self._user_sip:
-            account = await self.get_account()
-            self._user_sip = account.get("sip")
-
-        if not self._user_sip:
-            _LOGGER.error("User SIP number not available")
-            raise MultitekAPIError("User SIP number not available")
-
-        import time
-        import uuid
-
-        call_id = uuid.uuid4().hex  # 32 characters, no limit!
+        """Open door by initiating a call.
         
-        data = {
-            "call_model": {
-                "call_id": call_id,
-                "call_from": self._user_sip,
-                "call_to": device_sip,
-                "date": str(int(time.time() * 1000)),
-                "call_state": "Outgoing",
-                "data": "New call",
-                "path": "",
-                "location_id": location_id,
-                "duration": "0",
-                "notification_id": 0,
-                "extra_data": "",
-                "call_type": "DEVICE_TYPE_GATEWAY_DOOR",
-                "selected": False,
-                "isRead": False,
+        This uses the two-step process:
+        1. addCall - Create an outgoing call record
+        2. setCallDuration - Set duration to 6 seconds (triggers door unlock)
+        
+        This works without requiring an active doorbell ring.
+        """
+        try:
+            if not self._user_sip:
+                account = await self.get_account()
+                self._user_sip = account.get("sip")
+
+            if not self._user_sip:
+                _LOGGER.error("User SIP number not available")
+                raise MultitekAPIError("User SIP number not available")
+
+            import time
+            import uuid
+
+            call_id = uuid.uuid4().hex  # 32 characters
+            
+            data = {
+                "call_model": {
+                    "call_id": call_id,
+                    "call_from": self._user_sip,
+                    "call_to": device_sip,
+                    "date": str(int(time.time() * 1000)),
+                    "call_state": "Outgoing",
+                    "data": "New call",
+                    "path": "",
+                    "location_id": location_id,
+                    "duration": "0",
+                    "notification_id": 0,
+                    "extra_data": "",
+                    "call_type": "DEVICE_TYPE_GATEWAY_DOOR",
+                    "selected": False,
+                    "isRead": False,
+                }
             }
-        }
 
-        _LOGGER.info(
-            "Opening door - From: %s, To: %s, Location: %s, call_id: %s",
-            self._user_sip,
-            device_sip,
-            location_id,
-            call_id,
-        )
-
-        # Step 1: Create call
-        result = await self._request(ENDPOINT_ADD_CALL, data)
-        
-        _LOGGER.info("addCall API response: %s (type: %s)", result, type(result))
-        
-        # Response is "1" for success
-        success = result == "1" or result == 1
-        
-        if not success:
-            _LOGGER.error("addCall failed - API returned: %s", result)
-            return False
-        
-        # Step 2: Set call duration (this actually opens the door!)
-        duration_data = {
-            "call_id": call_id,
-            "call_duration": "6",  # 6 seconds, same as app
-        }
-        
-        _LOGGER.info("Setting call duration for call_id: %s", call_id)
-        
-        duration_result = await self._request(ENDPOINT_SET_CALL_DURATION, duration_data)
-        
-        _LOGGER.info("setCallDuration API response: %s (type: %s)", duration_result, type(duration_result))
-        
-        duration_success = duration_result == "1" or duration_result == 1
-        
-        if not duration_success:
-            _LOGGER.error(
-                "setCallDuration failed - call_id: %s, response: %s",
+            _LOGGER.info(
+                "Opening door - From: %s, To: %s, Location: %s, call_id: %s",
+                self._user_sip,
+                device_sip,
+                location_id,
                 call_id,
-                duration_result,
             )
+
+            # Step 1: Create call
+            _LOGGER.info("Step 1: Calling addCall API...")
+            result = await self._request(ENDPOINT_ADD_CALL, data)
+            
+            _LOGGER.info("addCall API response: %s (type: %s)", result, type(result))
+            
+            # Response is "1" for success
+            success = result == "1" or result == 1
+            
+            if not success:
+                _LOGGER.error("addCall failed - API returned: %s", result)
+                return False
+            
+            # Step 2: Set call duration (this actually opens the door!)
+            duration_data = {
+                "call_id": call_id,
+                "call_duration": "6",  # 6 seconds, same as app
+            }
+            
+            _LOGGER.info("Step 2: Calling setCallDuration API for call_id: %s", call_id)
+            
+            duration_result = await self._request(ENDPOINT_SET_CALL_DURATION, duration_data)
+            
+            _LOGGER.info("setCallDuration API response: %s (type: %s)", duration_result, type(duration_result))
+            
+            duration_success = duration_result == "1" or duration_result == 1
+            
+            if not duration_success:
+                _LOGGER.error(
+                    "setCallDuration failed - call_id: %s, response: %s",
+                    call_id,
+                    duration_result,
+                )
+                return False
+            
+            _LOGGER.info("Door opened successfully with call_id: %s!", call_id)
+            return True
+            
+        except MultitekAPIError:
+            raise
+        except Exception as err:
+            _LOGGER.error("Exception in open_door: %s", err, exc_info=True)
             return False
-        
-        _LOGGER.info("Door opened successfully with call_id: %s!", call_id)
-        return True
 
     async def open_door_with_call(self, call_id: str) -> bool:
         """Open door using active call ID.
