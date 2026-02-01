@@ -66,11 +66,24 @@ class MultitekAPI:
         data.setdefault("phone_id", self.phone_id)
         data.setdefault("language", "tr-TR")
 
+        # Headers matching Proxyman (critical for API to work!)
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "*/*",
+            "Accept-Language": "tr-TR;q=1.0, en-TR;q=0.9",
+            "Pragma": "no-cache",
+            "Cache-Control": "no-cache",
+            "User-Agent": "Multitek Cloud/1.3.47 (com.multitek.MultitekCloud; build:1; iOS 26.2.1) Alamofire/5.9.1",
+        }
+
         try:
+            _LOGGER.debug("API Request: %s - Data: %s", endpoint, data)
+            
             async with self.session.post(
                 url,
                 json=data,
                 auth=self.auth,
+                headers=headers,
                 timeout=aiohttp.ClientTimeout(total=30),
             ) as response:
                 if response.status == 401:
