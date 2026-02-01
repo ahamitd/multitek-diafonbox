@@ -125,33 +125,55 @@ class MultitekLock(CoordinatorEntity, LockEntity):
         )
         
         try:
+            # Step 1: Check for active call using askCurrentCall
+            _LOGGER.info("Step 1: Checking for active call...")
+            active_call = await self.coordinator.api.ask_current_call()
+            
+            if active_call:
+                # There's an active call, use controlCurrentCall
+                call_id = active_call.get("call_id")
+                _LOGGER.info("Active call found! Using controlCurrentCall with call_id: %s", call_id)
+                
+                success = await self.coordinator.api.open_door_with_call(call_id)
+                
+                if success:
+                    _LOGGER.info("Door opened successfully via active call: %s", call_id)
+                    self._fire_door_opened_event(device_sip, "controlCurrentCall", call_id)
+                    await self.coordinator.async_request_refresh()
+                    return
+                else:
+                    _LOGGER.warning("controlCurrentCall failed, trying addCall method...")
+            
+            # Step 2: No active call or controlCurrentCall failed
             # Use addCall + setCallDuration method
-            # This works without requiring an active doorbell ring
+            _LOGGER.info("Step 2: Using addCall + setCallDuration method...")
             success = await self.coordinator.api.open_door(
                 device_sip=device_sip,
                 location_id=self._location_id,
             )
             
             if success:
-                _LOGGER.info("Door opened successfully: %s", self._location_name)
-                
-                # Fire event
-                self.hass.bus.fire(
-                    EVENT_DOOR_OPENED,
-                    {
-                        ATTR_LOCATION_ID: self._location_id,
-                        ATTR_LOCATION_NAME: self._location_name,
-                        ATTR_DEVICE_SIP: device_sip,
-                    },
-                )
-                
-                # Request data refresh
+                _LOGGER.info("Door opened successfully via addCall: %s", self._location_name)
+                self._fire_door_opened_event(device_sip, "addCall", None)
                 await self.coordinator.async_request_refresh()
             else:
                 _LOGGER.error("Failed to open door: %s", self._location_name)
                 
         except Exception as err:
-            _LOGGER.error("Error opening door %s: %s", self._location_name, err)
+            _LOGGER.error("Error opening door %s: %s", self._location_name, err, exc_info=True)
+    
+    def _fire_door_opened_event(self, device_sip: str, method: str, call_id: str | None) -> None:
+        """Fire door opened event."""
+        self.hass.bus.fire(
+            EVENT_DOOR_OPENED,
+            {
+                ATTR_LOCATION_ID: self._location_id,
+                ATTR_LOCATION_NAME: self._location_name,
+                ATTR_DEVICE_SIP: device_sip,
+                "method": method,
+                "call_id": call_id,
+            },
+        )
 
     async def async_lock(self, **kwargs: Any) -> None:
         """Lock the door (not supported)."""

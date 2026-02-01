@@ -92,6 +92,7 @@ class MultitekDoorbellSensor(CoordinatorEntity, BinarySensorEntity):
     """Representation of a Multitek doorbell sensor."""
 
     _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
+    _attr_has_entity_name = True
 
     def __init__(
         self,
@@ -125,9 +126,16 @@ class MultitekDoorbellSensor(CoordinatorEntity, BinarySensorEntity):
         }
 
     @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return self.coordinator.last_update_success and self.coordinator.data is not None
+
+    @property
     def is_on(self) -> bool:
         """Return true if doorbell was pressed recently."""
-        # Check for recent calls (within last 10 seconds)
+        if not self.available:
+            return False
+        # Check for recent calls (within last 30 seconds)
         if self._sensor_type == "apartman":
             # Apartment entrance: calls from device to any room
             recent_calls = self.coordinator.get_recent_calls(minutes=0.5)  # 30 seconds

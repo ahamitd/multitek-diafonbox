@@ -159,6 +159,27 @@ class MultitekAPI:
         result = await self._request(ENDPOINT_GET_CALLS)
         return result if isinstance(result, list) else []
 
+    async def ask_current_call(self) -> dict[str, Any] | None:
+        """Ask for current active call.
+        
+        Returns:
+            Call info dict if there's an active call, None otherwise.
+            If call_id is "-1", there's no active call.
+        """
+        try:
+            result = await self._request(ENDPOINT_ASK_CURRENT_CALL)
+            
+            if isinstance(result, dict):
+                call_id = result.get("call_id", "-1")
+                if call_id != "-1" and call_id:
+                    _LOGGER.info("Active call found: %s", call_id)
+                    return result
+            
+            return None
+        except Exception as err:
+            _LOGGER.debug("No active call: %s", err)
+            return None
+
     async def open_door(self, device_sip: str, location_id: str) -> bool:
         """Open door by initiating a call.
         
